@@ -28,7 +28,7 @@
 我们的软件工程技术只有50多年的历史，我们仍旧在学很多东西，当软件架构和架构本身一样古老时，我们更难去遵守规则，现在，就让这些指南最为评估您和您团队的 TypeScript 代码质量的炼金石吧。
 此外，了解这些知识并不会让您马上成为一名优秀的软件开发人员，与代码合作多年并不意味着您不会犯错误，每一段代码都是从初稿开始，向黏土一样慢慢被塑造成最终的形状。然后，在我们与同行一起审查时，我们会慢慢去修复不完美的地方，所以不要因为改进初稿而感到挫败，让我们去打败代码吧。
 
-**[⬆ 回到顶部](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
 ## 变量
 ### 使用有意义的变量名称
@@ -51,4 +51,46 @@ function between<T>(value: T, left: T, right: T): boolean {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
+
+### 使用容易拼读的变量名称
+如果你无法拼读它，你会像一个白痴一样无法解释它
+
+**不推荐:**
+
+```ts
+type DtaRcrd102 = {
+  genymdhms: Date;
+  modymdhms: Date;
+  pszqint: number;
+}
+```
+
+**推荐:**
+
+```ts
+type Customer = {
+  generationTimestamp: Date;
+  modificationTimestamp: Date;
+  recordId: number;
+}
+```
+**[⬆ 回到顶部](#目录)**
+
+### 为同样类型的变量使用同样的词汇
+
+**不推荐:**
+
+```ts
+function getUserInfo(): User;
+function getUserDetails(): User;
+function getUserData(): User;
+```
+
+**推荐:**
+
+```ts
+function getUser(): User;
+```
+
+**[⬆ 回到顶部](#目录)**
