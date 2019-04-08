@@ -94,3 +94,24 @@ function getUser(): User;
 ```
 
 **[⬆ 回到顶部](#目录)**
+
+### 使用有意义的名称
+相比于写代码而言，我们更多的是去阅读代码，所以你写的代码是否可读和可检索至关重要，未命名的变量会影响对我们代码里理解，并伤害读者，所以让你的变量名可检索。可以使用[TSLint](https://palantir.github.io/tslint/rules/no-magic-numbers/) 来帮助识别未命名的常量。
+
+**不推荐:**
+
+```ts
+// 86400000 是什么鬼?
+setTimeout(restart, 86400000);
+```
+
+**推荐:**
+
+```ts
+// 将它们声明为大写的命名常量.
+const MILLISECONDS_IN_A_DAY = 24 * 60 * 60 * 1000;
+
+setTimeout(restart, MILLISECONDS_IN_A_DAY);
+```
+
+**[⬆ 回到顶部](#目录)**
