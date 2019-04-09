@@ -193,3 +193,26 @@ function print(car: Car): void {
 ```
 
 **[⬆ 回到顶部](#目录)**
+
+### 尽量使用默认参数，而不是再进行判断
+
+默认参数通常比再行判断更清晰。
+
+**不推荐:**
+
+```ts
+function loadPages(count?: number) {
+  const loadCount = count !== undefined ? count : 10;
+  // ...
+}
+```
+
+**推荐:**
+
+```ts
+function loadPages(count: number = 10) {
+  // ...
+}
+```
+
+**[⬆ 回到顶部](#目录)**
