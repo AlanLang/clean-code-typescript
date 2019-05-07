@@ -8,7 +8,7 @@
 
   1. [简介](#简介)
   2. [变量](#变量)
-  3. [Functions](#functions)
+  3. [方法](#方法)
   4. [Objects and Data Structures](#objects-and-data-structures)
   5. [Classes](#classes)
   6. [SOLID](#solid)
@@ -213,6 +213,66 @@ function loadPages(count?: number) {
 function loadPages(count: number = 10) {
   // ...
 }
+```
+
+**[⬆ 回到顶部](#目录)**
+
+## 方法
+### 参数 (最多两个)
+限制方法参数的数量至关重要，因为它会使得您方法的测试变得更容易，参数数量超过三个就会造成过多的组合，你必须用每个单独的参数去测试大量的情况。
+一个或两个参数是最理想的情况，如果可能的话应该尽量避免三个，应该去整合除此之外的任何东西。
+
+通常如果你有两个以上的参数，说明你的方法做了太多的事情，如果不是，则用更高级的对象来作为参数。
+
+如果你发现自己需要大量参数，则考虑使用对象。
+
+可以使用[结构赋值](https://basarat.gitbooks.io/typescript/docs/destructuring.html)来明确方法所期望的参数属性。
+这样有一些优点：
+1. 当有人查看功能签名时，会立即清楚正在使用的属性。
+2. 解构还克隆传递给函数的参数对象的指定原始值。 这有助于预防副作用。 注意：不会克隆从参数对象中解构的对象和数组。
+3. TypeScript会警告您未使用的属性，如果没有解构，这将是不可能的。
+
+**不推荐:**
+
+```ts
+function createMenu(title: string, body: string, buttonText: string, cancellable: boolean) {
+  // ...
+}
+
+createMenu('Foo', 'Bar', 'Baz', true);
+```
+
+**推荐:**
+
+```ts
+function createMenu(options: { title: string, body: string, buttonText: string, cancellable: boolean }) {
+  // ...
+}
+
+createMenu({
+  title: 'Foo',
+  body: 'Bar',
+  buttonText: 'Baz',
+  cancellable: true
+});
+```
+
+你可以使用[类型别名](https://www.typescriptlang.org/docs/handbook/advanced-types.html#type-aliases)来进一步提高可读性:
+
+```ts
+
+type MenuOptions = { title: string, body: string, buttonText: string, cancellable: boolean };
+
+function createMenu(options: MenuOptions) {
+  // ...
+}
+
+createMenu({
+  title: 'Foo',
+  body: 'Bar',
+  buttonText: 'Baz',
+  cancellable: true
+});
 ```
 
 **[⬆ 回到顶部](#目录)**
