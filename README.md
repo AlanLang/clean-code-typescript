@@ -276,3 +276,34 @@ createMenu({
 ```
 
 **[⬆ 回到顶部](#目录)**
+
+### 每个方法只做一件事情
+这是迄今为止软件工程中最重要的规则。 当一个方法执行多个操作时，它们会更加难以编写，测试和推理。 当您可以将一个函数隔离到一个动作时，它们可以轻松地重构，并且您的代码将更加清晰。 如果你除了这个之外没有别的东西，那么你将领先于许多开发者。
+
+**不推荐:**
+
+```ts
+function emailClients(clients: Client[]) {
+  clients.forEach((client) => {
+    const clientRecord = database.lookup(client);
+    if (clientRecord.isActive()) {
+      email(client);
+    }
+  });
+}
+```
+
+**推荐:**
+
+```ts
+function emailClients(clients: Client[]) {
+  clients.filter(isActiveClient).forEach(email);
+}
+
+function isActiveClient(client: Client) {
+  const clientRecord = database.lookup(client);
+  return clientRecord.isActive();
+}
+```
+
+**[⬆ 回到顶部](#目录)**
