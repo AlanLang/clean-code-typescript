@@ -307,3 +307,268 @@ function isActiveClient(client: Client) {
 ```
 
 **[⬆ 回到顶部](#目录)**
+
+### 在方法名上体现要做的事情
+**不推荐:**
+
+```ts
+function addToDate(date: Date, month: number): Date {
+  // ...
+}
+
+const date = new Date();
+
+// 很难从方法名中看出增加的是什么
+addToDate(date, 1);
+```
+
+**推荐:**
+
+```ts
+function addMonthToDate(date: Date, month: number): Date {
+  // ...
+}
+
+const date = new Date();
+addMonthToDate(date, 1);
+```
+
+**[⬆ 回到顶部](#目录)**
+
+### 方法应该只是一个级别的抽象
+如果你的一个方法有多个级别的抽象，这说明这个方法做的事情太多了。必要的拆分可以使得方法更容易被重用和更容易测试。
+
+**不推荐:**
+
+```ts
+function parseCode(code: string) {
+  const REGEXES = [ /* ... */ ];
+  const statements = code.split(' ');
+  const tokens = [];
+
+  REGEXES.forEach((regex) => {
+    statements.forEach((statement) => {
+      // ...
+    });
+  });
+
+  const ast = [];
+  tokens.forEach((token) => {
+    // lex...
+  });
+
+  ast.forEach((node) => {
+    // parse...
+  });
+}
+```
+
+**推荐:**
+
+```ts
+const REGEXES = [ /* ... */ ];
+
+function parseCode(code: string) {
+  const tokens = tokenize(code);
+  const syntaxTree = parse(tokens);
+
+  syntaxTree.forEach((node) => {
+    // parse...
+  });
+}
+
+function tokenize(code: string): Token[] {
+  const statements = code.split(' ');
+  const tokens: Token[] = [];
+
+  REGEXES.forEach((regex) => {
+    statements.forEach((statement) => {
+      tokens.push( /* ... */ );
+    });
+  });
+
+  return tokens;
+}
+
+function parse(tokens: Token[]): SyntaxTree {
+  const syntaxTree: SyntaxTree[] = [];
+  tokens.forEach((token) => {
+    syntaxTree.push( /* ... */ );
+  });
+
+  return syntaxTree;
+}
+```
+
+**[⬆ 回到顶部](#目录)**
+
+### 移除重复代码
+
+尽量避免重复代码
+重复代码是很糟糕的，因为这意味着如果你需要改某些逻辑，则必须去同时修改改多个地方。
+
+想象一下，如果你经营者一家餐馆并需要追踪你的库存，比如你的西红柿、洋葱、大蒜、香料等，如果你有多个地方记录他们，每当他们变化了你就需要更新多个列表，如果你只有一个列表，那么你只用更新一个地方！
+
+通常重复代码的出现是因为你有两个或者两个以上略有不同的东西，他们有很多共同之处，但是他们之间的差异迫使你需要有两个或者多个独立的方法来执行大部分相同的事情，删除重复代码意味着创建一个抽象，只需要一个方法/模块/类就可以处理这组不同的东西。
+
+获得正确的抽象是至关重要的，这就是为什么你需要遵循[单一责任原则](#单一责任原则)，但是糟糕的抽象可能比重复代码更加糟糕，所以一定要小心，如果你能实现好的抽象，尽量去实现它，不要去做重复的事情。
+
+**不推荐:**
+
+```ts
+function showDeveloperList(developers: Developer[]) {
+  developers.forEach((developer) => {
+    const expectedSalary = developer.calculateExpectedSalary();
+    const experience = developer.getExperience();
+    const githubLink = developer.getGithubLink();
+
+    const data = {
+      expectedSalary,
+      experience,
+      githubLink
+    };
+
+    render(data);
+  });
+}
+
+function showManagerList(managers: Manager[]) {
+  managers.forEach((manager) => {
+    const expectedSalary = manager.calculateExpectedSalary();
+    const experience = manager.getExperience();
+    const portfolio = manager.getMBAProjects();
+
+    const data = {
+      expectedSalary,
+      experience,
+      portfolio
+    };
+
+    render(data);
+  });
+}
+```
+
+**推荐:**
+
+```ts
+class Developer {
+  // ...
+  getExtraDetails() {
+    return {
+      githubLink: this.githubLink,
+    }
+  }
+}
+
+class Manager {
+  // ...
+  getExtraDetails() {
+    return {
+      portfolio: this.portfolio,
+    }
+  }
+}
+
+function showEmployeeList(employee: Developer | Manager) {
+  employee.forEach((employee) => {
+    const expectedSalary = employee.calculateExpectedSalary();
+    const experience = employee.getExperience();
+    const extra = employee.getExtraDetails();
+
+    const data = {
+      expectedSalary,
+      experience,
+      extra,
+    };
+
+    render(data);
+  });
+}
+```
+
+**[⬆ 回到顶部](#目录)**
+
+### 使用`Object.assign`或者解析构值来定义默认的对象
+
+**不推荐:**
+
+```ts
+type MenuConfig = { title?: string, body?: string, buttonText?: string, cancellable?: boolean };
+
+function createMenu(config: MenuConfig) {
+  config.title = config.title || 'Foo';
+  config.body = config.body || 'Bar';
+  config.buttonText = config.buttonText || 'Baz';
+  config.cancellable = config.cancellable !== undefined ? config.cancellable : true;
+
+  // ...
+}
+
+createMenu({ body: 'Bar' });
+```
+
+**推荐:**
+
+```ts
+type MenuConfig = { title?: string, body?: string, buttonText?: string, cancellable?: boolean };
+
+function createMenu(config: MenuConfig) {
+  const menuConfig = Object.assign({
+    title: 'Foo',
+    body: 'Bar',
+    buttonText: 'Baz',
+    cancellable: true
+  }, config);
+
+  // ...
+}
+
+createMenu({ body: 'Bar' });
+```
+
+或者，你也可以使用解析构值来实现。
+
+```ts
+type MenuConfig = { title?: string, body?: string, buttonText?: string, cancellable?: boolean };
+
+function createMenu({ title = 'Foo', body = 'Bar', buttonText = 'Baz', cancellable = true }: MenuConfig) {
+  // ...
+}
+
+createMenu({ body: 'Bar' });
+```
+
+通过显示传入`undefined`或者`null`值来避免任何副作用，也可以告诉`TypeScript`编译器不允许他们。请参阅[`--strictNullChecks`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-0.html#--strictnullchecks)
+
+**[⬆ 回到顶部](#目录)**
+
+### 不要将布尔值作为方法的参数
+
+布尔值表示了你的方法不止做了一件事情，请根据布尔值拆分你的方法。
+
+**不推荐:**
+
+```ts
+function createFile(name: string, temp: boolean) {
+  if (temp) {
+    fs.create(`./temp/${name}`);
+  } else {
+    fs.create(name);
+  }
+}
+```
+
+**推荐:**
+
+```ts
+function createTempFile(name: string) {
+  createFile(`./temp/${name}`);
+}
+
+function createFile(name: string) {
+  fs.create(name);
+}
+```
+
+**[⬆ 回到顶部](#目录)**
