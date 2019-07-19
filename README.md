@@ -12,12 +12,11 @@
   4. [对象和数据结构](#对象和数据结构)
   5. [类](#类)
   6. [SOLID原则](#SOLID原则)
-  7. [Testing](#testing)
-  8. [Concurrency](#concurrency)
-  9. [Error Handling](#error-handling)
-  10. [Formatting](#formatting)
-  11. [Comments](#comments)
-  12. [Translations](#translations)
+  7. [测试](#测试)
+  8. [并发](#并发)
+  9. [异常处理](#异常处理)
+  10. [格式化](#格式化)
+  11. [注释](#注释)
 
 ## 简介
 
@@ -1851,47 +1850,41 @@ const reader = new ReportReader(new JsonFormatter());
 await report = await reader.read('report.json');
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Testing
+## 测试
+测试比编码更重要，如果你的测试数量很少或者根本没有，那么每次修改代码时，你都不会确定有没有破坏其他地方，决定要到什么样的测试程度取决于你的团队，但是100%的覆盖率会让你开发的时候更有信心。这意味你需要一个好的框架之外还需要一个好的[覆盖统计工具](https://github.com/gotwarlost/istanbul)
+没有理由不写测试，有好多很好的js测试框架对typescript都有很好的支持，当您找到适合您团队的时，请始终为您引入的每个新功能/模块编写测试。 如果您首选的方法是测试驱动开发（TDD），那很好，但重点是确保在启动任何功能或重构现有功能之前达到覆盖目标。
 
-Testing is more important than shipping. If you have no tests or an inadequate amount, then every time you ship code you won't be sure that you didn't break anything.
-Deciding on what constitutes an adequate amount is up to your team, but having 100% coverage (all statements and branches)
-is how you achieve very high confidence and developer peace of mind. This means that in addition to having a great testing framework, you also need to use a good [coverage tool](https://github.com/gotwarlost/istanbul).
+### 测试驱动开发的三条原则
 
-There's no excuse to not write tests. There are [plenty of good JS test frameworks](http://jstherightway.org/#testing-tools) with typings support for TypeScript, so find one that your team prefers. When you find one that works for your team, then aim to always write tests for every new feature/module you introduce. If your preferred method is Test Driven Development (TDD), that is great, but the main point is to just make sure you are reaching your coverage goals before launching any feature, or refactoring an existing one.  
+1. 除非这能让失败的单元测试通过，否则不允许去编写任何的产品代码。
+2. 只允许编写刚好能够导致失败的单元测试。 （编译失败也属于一种失败）
+3. 只允许编写刚好能够导致一个单元测试失败的产品代码。
 
-### The three laws of TDD
+**[⬆ 回到顶部](#目录)**
 
-1. You are not allowed to write any production code unless it is to make a failing unit test pass.
+### F.I.R.S.T. 原则
 
-2. You are not allowed to write any more of a unit test than is sufficient to fail; and compilation failures are failures.
+整洁的测试需要遵循以下原则:
 
-3. You are not allowed to write any more production code than is sufficient to pass the one failing unit test.
+- **快速** 测试运行起来应该是快速的因为我们会经常运行他们。
 
-**[⬆ back to top](#table-of-contents)**
+- **独立** 每天测试不允许互相依赖，无论是独立运行还是顺序运行他们的返回应该是相同的。
 
-### F.I.R.S.T. rules
+- **可复现** 测试应该是在任意环境下都是可复现的。
 
-Clean tests should follow the rules:
+- **自我确认** 测试需要自己体现**通过**或是**不通过**，而不是靠开发者自己比对日志来判断是否通过。
 
-- **Fast** tests should be fast because we want to run them frequently.
+- **及时** 单元测试应该在生产代码之前编写。 如果您在生产代码之后编写测试，您可能会发现编写测试太辛苦了。
 
-- **Independent** tests should not depend on each other. They should provide same output whether run independently or all together in any order.
+**[⬆ 回到顶部](#目录)**
 
-- **Repeatable** tests should be repeatable in any environment and there should be no excuse for why they fail.
+### 测试单一责任
 
-- **Self-Validating** a test should answer with either *Passed* or *Failed*. You don't need to compare log files to answer if a test passed.
+测试也需要遵循**单一责任原则**。
 
-- **Timely** unit tests should be written before the production code. If you write tests after the production code, you might find writing tests too hard.
-
-**[⬆ back to top](#table-of-contents)**
-
-### Single concept per test
-
-Tests should also follow the *Single Responsibility Principle*. Make only one assert per unit test.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 import { assert } from 'chai';
@@ -1912,7 +1905,7 @@ describe('AwesomeDate', () => {
 });
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { assert } from 'chai';
@@ -1935,13 +1928,11 @@ describe('AwesomeDate', () => {
 });
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### The name of the test should reveal its intention
+### 测试的名字应该表示了测试的意图
 
-When a test fail, its name is the first indication of what may have gone wrong.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 describe('Calendar', () => {
@@ -1955,7 +1946,7 @@ describe('Calendar', () => {
 });
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 describe('Calendar', () => {
@@ -1969,17 +1960,14 @@ describe('Calendar', () => {
 });
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Concurrency
+## 并发
 
-### Prefer promises vs callbacks
+### promises 对比 callbacks
+回调嵌套过多会产生**回调地狱**，使用promises可以有效解决这个问题。
 
-Callbacks aren't clean, and they cause excessive amounts of nesting *(the callback hell)*.  
-There are utilities that transform existing functions using the callback style to a version that returns promises
-(for Node.js see [`util.promisify`](https://nodejs.org/dist/latest-v8.x/docs/api/util.html#util_util_promisify_original), for general purpose see [pify](https://www.npmjs.com/package/pify), [es6-promisify](https://www.npmjs.com/package/es6-promisify))
-
-**Bad:**
+**不推荐:**
 
 ```ts
 import { get } from 'request';
@@ -2010,7 +1998,7 @@ downloadPage('https://en.wikipedia.org/wiki/Robert_Cecil_Martin', 'article.html'
 });
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { get } from 'request';
@@ -2029,24 +2017,13 @@ downloadPage('https://en.wikipedia.org/wiki/Robert_Cecil_Martin', 'article.html'
   .catch(error => console.error(error));  
 ```
 
-Promises supports a few helper methods that help make code more conscise:  
+**[⬆ 回到顶部](#目录)**
 
-| Pattern                  | Description                                |  
-| ------------------------ | -----------------------------------------  |  
-| `Promise.resolve(value)` | Convert a value into a resolved promise.   |  
-| `Promise.reject(error)`  | Convert an error into a rejected promise.  |  
-| `Promise.all(promises)`  |Returns a new promise which is fulfilled with an array of fulfillment values for the passed promises or rejects with the reason of the first promise that rejects. |
-| `Promise.race(promises)`|Returns a new promise which is fulfilled/rejected with the result/error of the first settled promise from the array of passed promises. |
+### Async/Await 比 Promises 更加简洁
 
-`Promise.all` is especially useful when there is a need to run tasks in parallel. `Promise.race` makes it easier to implement things like timeouts for promises.
+使用`async` /`await`语法，您可以编写比链式调用更清晰，更易理解的代码。 在一个以`async`关键字为前缀的方法中，您可以告诉JavaScript运行时暂停执行`await`关键字上的代码（当在promise上使用时）。
 
-**[⬆ back to top](#table-of-contents)**
-
-### Async/Await are even cleaner than Promises
-
-With `async`/`await` syntax you can write code that is far cleaner and more understandable than chained promises. Within a function prefixed with `async` keyword you have a way to tell the JavaScript runtime to pause the execution of code on the `await` keyword (when used on a promise).
-
-**Bad:**
+**不推荐:**
 
 ```ts
 import { get } from 'request';
@@ -2064,7 +2041,7 @@ downloadPage('https://en.wikipedia.org/wiki/Robert_Cecil_Martin', 'article.html'
   .catch(error => console.error(error));  
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { get } from 'request';
@@ -2079,7 +2056,6 @@ async function downloadPage(url: string, saveTo: string): Promise<string> {
   return response;
 }
 
-// somewhere in an async function
 try {
   const content = await downloadPage('https://en.wikipedia.org/wiki/Robert_Cecil_Martin', 'article.html');
   console.log(content);
@@ -2088,22 +2064,15 @@ try {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Error Handling
+## 异常处理
 
-Thrown errors are a good thing! They mean the runtime has successfully identified when something in your program has gone wrong and it's letting you know by stopping function
-execution on the current stack, killing the process (in Node), and notifying you in the console with a stack trace.
+抛出异常是件好事！ 它们意味着运行时已经成功识别出程序中的某些内容出错并及时通知您。
 
-### Always use Error for throwing or rejecting
+### 始终使用`Error`对象来抛出错误。
 
-JavaScript as well as TypeScript allow you to `throw` any object. A Promise can also be rejected with any reason object.  
-It is advisable to use the `throw` syntax with an `Error` type. This is because your error might be caught in higher level code with a `catch` syntax.
-It would be very confusing to catch a string message there and would make
-[debugging more painful](https://basarat.gitbooks.io/typescript/docs/types/exceptions.html#always-use-error).  
-For the same reason you should reject promises with `Error` types.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 function calculateTotal(items: Item[]): number {
@@ -2115,7 +2084,7 @@ function get(): Promise<Item[]> {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function calculateTotal(items: Item[]): number {
@@ -2126,40 +2095,16 @@ function get(): Promise<Item[]> {
   return Promise.reject(new Error('Not implemented.'));
 }
 
-// or equivalent to:
-
 async function get(): Promise<Item[]> {
   throw new Error('Not implemented.');
 }
 ```
 
-The benefit of using `Error` types is that it is supported by the syntax `try/catch/finally` and implicitly all errors have the `stack` property which
-is very powerful for debugging.  
-There are also another alternatives, not to use the `throw` syntax and instead always return custom error objects. TypeScript makes this even easier.
-Consider following example:
+**[⬆ 回到顶部](#目录)**
 
-```ts
-type Result<R> = { isError: false, value: R };
-type Failure<E> = { isError: true, error: E };
-type Failable<R, E> = Result<R> | Failure<E>;
+### 不要忽略掉捕捉后的错误
 
-function calculateTotal(items: Item[]): Failable<number, 'empty'> {
-  if (items.length === 0) {
-    return { isError: true, error: 'empty' };
-  }
-
-  // ...
-  return { isError: false, value: 42 };
-}
-```
-
-For the detailed explanation of this idea refer to the [original post](https://medium.com/@dhruvrajvanshi/making-exceptions-type-safe-in-typescript-c4d200ee78e9).
-
-**[⬆ back to top](#table-of-contents)**
-
-### Don't ignore caught errors
-
-Doing nothing with a caught error doesn't give you the ability to ever fix or react to said error. Logging the error to the console (`console.log`) isn't much better as often times it can get lost in a sea of things printed to the console. If you wrap any bit of code in a `try/catch` it means you think an error may occur there and therefore you should have a plan, or create a code path, for when it occurs.
+对捕获的错误不执行任何操作并不能使您能够修复或对所述错误做出反应。 将错误记录到控制台（`console.log`）也不是很好，因为它常常会被其他东西所淹没。 所以你应该有一个统一的地方集中处理这些错误。
 
 **Bad:**
 
@@ -2170,12 +2115,12 @@ try {
   console.log(error);
 }
 
-// or even worse
+// 或者更严重
 
 try {
   functionThatMightThrow();
 } catch (error) {
-  // ignore error
+  // 直接忽略掉
 }
 ```
 
@@ -2191,13 +2136,13 @@ try {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Don't ignore rejected promises
+### 不要忽略promises 的 rejected
 
-For the same reason you shouldn't ignore caught errors from `try/catch`.
+就像不能忽略`try/catch`到的异常一样
 
-**Bad:**
+**不推荐:**
 
 ```ts
 getUser()
@@ -2209,7 +2154,7 @@ getUser()
   });
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { logger } from './logging'
@@ -2222,7 +2167,7 @@ getUser()
     logger.log(error);
   });
 
-// or using the async/await syntax:
+// 或者
 
 try {
   const user = await getUser();
@@ -2232,35 +2177,31 @@ try {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Formatting
+## 格式化
 
-Formatting is subjective. Like many rules herein, there is no hard and fast rule that you must follow. The main point is *DO NOT ARGUE* over formatting. There are tons of tools to automate this. Use one! It's a waste of time and money for engineers to argue over formatting. The general rule to follow is *keep consistent formatting rules*.  
+格式化是主观的。 像这里的许多规则一样，没有必须遵循特定硬性规则。 重点是*不要过于格式化*格式化。 有很多工具可以实现自动化。 用一个就好！ 工程师争论格式化是浪费时间和金钱的。 遵循的一般规则是*保持一致的格式规则*就可以了。
 
-For TypeScript there is a powerful tool called [TSLint](https://palantir.github.io/tslint/). It's a static analysis tool that can help you improve dramatically the readability and maintainability of your code. There are ready to use TSLint configurations that you can reference in your projects:
+TypeScript 有一个很强大的工具叫做 [TSLint](https://palantir.github.io/tslint/). 它是一个静态分析工具，可以帮助您显着提高代码的可读性和可维护性。 下面是您可以在项目中引用的TSLint配置：
 
-- [TSLint Config Standard](https://www.npmjs.com/package/tslint-config-standard) - standard style rules
+- [TSLint Config Standard](https://www.npmjs.com/package/tslint-config-standard) - 标准风格规则
 
-- [TSLint Config Airbnb](https://www.npmjs.com/package/tslint-config-airbnb) - Airbnb style guide
+- [TSLint Config Airbnb](https://www.npmjs.com/package/tslint-config-airbnb) - Airbnb风格
 
-- [TSLint Clean Code](https://www.npmjs.com/package/tslint-clean-code) - TSLint rules inspired by the [Clean Code: A Handbook of Agile Software Craftsmanship](https://www.amazon.ca/Clean-Code-Handbook-Software-Craftsmanship/dp/0132350882)
+- [TSLint Clean Code](https://www.npmjs.com/package/tslint-clean-code) - 代码整洁之道的规则
 
-- [TSLint react](https://www.npmjs.com/package/tslint-react) - lint rules related to React & JSX
+- [TSLint react](https://www.npmjs.com/package/tslint-react) - React 和 JSX 的规则
 
-- [TSLint + Prettier](https://www.npmjs.com/package/tslint-config-prettier) - lint rules for [Prettier](https://github.com/prettier/prettier) code formatter
+- [TSLint + Prettier](https://www.npmjs.com/package/tslint-config-prettier) -  [Prettier](https://github.com/prettier/prettier) 代码风格
 
-- [ESLint rules for TSLint](https://www.npmjs.com/package/tslint-eslint-rules) - ESLint rules for TypeScript
+- [ESLint rules for TSLint](https://www.npmjs.com/package/tslint-eslint-rules) - ESLint 规则
 
-- [Immutable](https://www.npmjs.com/package/tslint-immutable) - rules to disable mutation in TypeScript
+### 使用一致的写法
 
-Refer also to this great [TypeScript StyleGuide and Coding Conventions](https://basarat.gitbooks.io/typescript/docs/styleguide/styleguide.html) source.
+这些规则是主观的，所以你的团队可以选择按自己的风格制定。 关键是，无论你选择什么，只要*保持一致*。
 
-### Use consistent capitalization
-
-Capitalization tells you a lot about your variables, functions, etc. These rules are subjective, so your team can choose whatever they want. The point is, no matter what you all choose, just *be consistent*.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 const DAYS_IN_WEEK = 7;
@@ -2276,7 +2217,7 @@ type animal = { /* ... */ }
 type Container = { /* ... */ }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 const DAYS_IN_WEEK = 7;
@@ -2292,17 +2233,15 @@ type Animal = { /* ... */ }
 type Container = { /* ... */ }
 ```
 
-Prefer using `PascalCase` for class, interface, type and namespace names.  
-Prefer using `camelCase` for variables, functions and class members.
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Function callers and callees should be close
+### 调用者和被调用者的方法应该是相邻的
 
-If a function calls another, keep those functions vertically close in the source file. Ideally, keep the caller right above the callee.
-We tend to read code from top-to-bottom, like a newspaper. Because of this, make your code read that way.
+如果函数调用另一个函数，请在源文件中设置这两个函数相邻。 理想情况下，将呼叫者保持在被叫者正上方。
+我们倾向于从头到尾阅读代码，就像报纸一样。 因此，请以这种方式阅读您的代码。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 class PerformanceReview {
@@ -2343,7 +2282,7 @@ const review = new PerformanceReview(employee);
 review.review();
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class PerformanceReview {
@@ -2384,26 +2323,26 @@ const review = new PerformanceReview(employee);
 review.review();
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Organize imports
+### 组织 imports
 
-With clean and easy to read import statements you can quickly see the dependencies of current code. Make sure you apply following good practices for `import` statements:
+使用简洁易读的import语句，您可以快速查看当前代码的依赖关系。 确保对`import`语句应用以下良好实践：
 
-- Import statements should be alphabetized and grouped.
-- Unused imports should be removed.
-- Named imports must be alphabetized (i.e. `import {A, B, C} from 'foo';`)
-- Import sources must be alphabetized within groups, i.e.: `import * as foo from 'a'; import * as bar from 'b';`
-- Groups of imports are delineated by blank lines.
-- Groups must respect following order:
-  - Polyfills (i.e. `import 'reflect-metadata';`)
-  - Node builtin modules (i.e. `import fs from 'fs';`)
-  - external modules (i.e. `import { query } from 'itiriri';`)
-  - internal modules (i.e `import { UserService } from 'src/services/userService';`)
-  - modules from a parent directory (i.e. `import foo from '../foo'; import qux from '../../foo/qux';`)
-  - modules from the same or a sibling's directory (i.e. `import bar from './bar'; import baz from './bar/baz';`)
+- 导入语句应按字母顺序排列并分组。
+- 不需要的引用应该被移除。
+- 命名导入必须按字母顺序排列 例如: `import {A, B, C} from 'foo';`
+- 导入源必须在组内按字母顺序排列, 例如: `import * as foo from 'a'; import * as bar from 'b';`
+- 每一组引用之间用空行分隔。
+- 分组之间需要遵循以下顺序:
+  - Polyfills (例如. `import 'reflect-metadata';`)
+  - Node 内置模块 (例如. `import fs from 'fs';`)
+  - 外部模块 (例如. `import { query } from 'itiriri';`)
+  - 内部模块 (例如. `import { UserService } from 'src/services/userService';`)
+  - 来自父目录的模块 (例如. `import foo from '../foo'; import qux from '../../foo/qux';`)
+  - 来自兄弟目录或同目录的模块 (例如. `import bar from './bar'; import baz from './bar/baz';`)
 
-**Bad:**
+**不推荐:**
 
 ```ts
 import { TypeDefinition } from '../types/typeDefinition';
@@ -2415,7 +2354,7 @@ import { BindingScopeEnum, Container } from 'inversify';
 import 'reflect-metadata';
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import 'reflect-metadata';
@@ -2430,21 +2369,20 @@ import { ApiCredentials, Adapters } from './common/api/authorization';
 import { ConfigPlugin } from './plugins/config/configPlugin';
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Use typescript aliases
+### 使用别名
 
-Create prettier imports by defining the paths and baseUrl properties in the compilerOptions section in the `tsconfig.json`
+通过在`tsconfig.json`的compilerOptions部分中定义路径和baseUrl属性来创建更漂亮的导入。
+这样可以在进行导入时避免长的相对路径。
 
-This will avoid long relative paths when doing imports.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 import { UserService } from '../../../services/UserService';
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { UserService } from '@services/UserService';
@@ -2464,23 +2402,18 @@ import { UserService } from '@services/UserService';
 ...
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Comments
+## 注释
 
-The use of a comments is an indication of failure to express without them. Code should be the only source of truth.
-  
-> Don’t comment bad code—rewrite it.  
-> — *Brian W. Kernighan and P. J. Plaugher*
+当没有注释无法表达的时候，才使用注释
 
-### Prefer self explanatory code instead of comments
+### 更倾向于自解释代码而不是注释
 
-Comments are an apology, not a requirement. Good code *mostly* documents itself.
-
-**Bad:**
+**不推荐:**
 
 ```ts
-// Check if subscription is active.
+// 检查订阅是否到期
 if (subscription.endDate > Date.now) {  }
 ```
 
@@ -2491,13 +2424,13 @@ const isSubscriptionActive = subscription.endDate > Date.now;
 if (isSubscriptionActive) { /* ... */ }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Don't leave commented out code in your codebase
+### 不要在代码库中留下注释的代码
 
-Version control exists for a reason. Leave old code in your history.
+版本控制的存在是有原因的。 在您的历史记录中保留旧代码。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 type User = {
@@ -2508,7 +2441,7 @@ type User = {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 type User = {
@@ -2517,13 +2450,13 @@ type User = {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Don't have journal comments
+### 不要使用日记评论
 
-Remember, use version control! There's no need for dead code, commented code, and especially journal comments. Use `git log` to get history!
+请记住，使用版本控制！ 不需要无用代码，注释代码，尤其是日记评论。 使用`git log`获取历史记录！
 
-**Bad:**
+**不推荐:**
 
 ```ts
 /**
@@ -2537,7 +2470,7 @@ function combine(a: number, b: number): number {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function combine(a: number, b: number): number {
@@ -2545,14 +2478,12 @@ function combine(a: number, b: number): number {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Avoid positional markers
+### 禁止位置分隔
+这会增加代码噪声，大多数IDE是支持代码折叠的，请使用。
 
-They usually just add noise. Let the functions and variable names along with the proper indentation and formatting give the visual structure to your code.  
-Most IDE support code folding feature that allows you to collapse/expand blocks of code (see Visual Studio Code [folding regions](https://code.visualstudio.com/updates/v1_17#_folding-regions)).
-
-**Bad:**
+**不推荐:**
 
 ```ts
 ////////////////////////////////////////////////////////////////////////////////
@@ -2584,7 +2515,7 @@ class Client {
 };
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class Client {
@@ -2607,17 +2538,13 @@ class Client {
 };
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### TODO comments
+### TODO 标记
 
-When you find yourself that you need to leave notes in the code for some later improvements,
-do that using `// TODO` comments. Most IDE have special support for those kind of comments so that
-you can quickly go over the entire list of todos.  
+当您发现自己需要在代码中留下注释以进行后续改进时，使用`// TODO`注释来实现。 大多数IDE都支持这种注释，方便你可以快速浏览整个待办事项列表。
 
-Keep in mind however that a *TODO* comment is not an excuse for bad code. 
-
-**Bad:**
+**不推荐:**
 
 ```ts
 function getActiveSubscriptions(): Promise<Subscription[]> {
@@ -2626,7 +2553,7 @@ function getActiveSubscriptions(): Promise<Subscription[]> {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function getActiveSubscriptions(): Promise<Subscription[]> {
@@ -2635,21 +2562,4 @@ function getActiveSubscriptions(): Promise<Subscription[]> {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
-
-## Translations
-
-This is also available in other languages:
-- ![br](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/24/Brazil.png) **Brazilian Portuguese**: [vitorfreitas/clean-code-typescript](https://github.com/vitorfreitas/clean-code-typescript)
-- ![cn](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/24/China.png) **Chinese**: 
-  - [beginor/clean-code-typescript](https://github.com/beginor/clean-code-typescript)
-  - [pipiliang/clean-code-typescript](https://github.com/pipiliang/clean-code-typescript)
-- ![ja](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/24/Japan.png) **Japanese**: [MSakamaki/clean-code-typescript](https://github.com/MSakamaki/clean-code-typescript)
-
-There is work in progress for translating this to other languages:
-
-- ![kr](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/24/South-Korea.png) Korean
-
-References will be added once translations are completed.  
-Check this [discussion](https://github.com/labs42io/clean-code-typescript/issues/15) for more details and progress.
-You can make an indispensable contribution to *Clean Code* community by translating this to your language.
+**[⬆ 回到顶部](#目录)**
