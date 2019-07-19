@@ -1802,7 +1802,7 @@ const reader = new ReportReader();
 await report = await reader.read('report.xml');
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { readFile as readFileCb } from 'fs';
@@ -2106,7 +2106,7 @@ async function get(): Promise<Item[]> {
 
 对捕获的错误不执行任何操作并不能使您能够修复或对所述错误做出反应。 将错误记录到控制台（`console.log`）也不是很好，因为它常常会被其他东西所淹没。 所以你应该有一个统一的地方集中处理这些错误。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 try {
@@ -2124,7 +2124,7 @@ try {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 import { logger } from './logging'
@@ -2417,7 +2417,7 @@ import { UserService } from '@services/UserService';
 if (subscription.endDate > Date.now) {  }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 const isSubscriptionActive = subscription.endDate > Date.now;
