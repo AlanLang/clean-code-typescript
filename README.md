@@ -9,9 +9,9 @@
   1. [简介](#简介)
   2. [变量](#变量)
   3. [方法](#方法)
-  4. [Objects and Data Structures](#objects-and-data-structures)
-  5. [Classes](#classes)
-  6. [SOLID](#solid)
+  4. [对象和数据结构](#对象和数据结构)
+  5. [类](#类)
+  6. [SOLID原则](#SOLID原则)
   7. [Testing](#testing)
   8. [Concurrency](#concurrency)
   9. [Error Handling](#error-handling)
@@ -606,23 +606,18 @@ const encodedName = toBase64(name);
 console.log(name);
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
 ### 避免副作用（第二部分）
 
-In JavaScript, primitives are passed by value and objects/arrays are passed by reference. In the case of objects and arrays, if your function makes a change in a shopping cart array, for example, by adding an item to purchase, then any other function that uses that `cart` array will be affected by this addition. That may be great, however it can be bad too. Let's imagine a bad situation:  
+在JavaScript中，值类型通过值来传递，对象/数组通过引用传递，对于对象和数组，如果你在方法中进行了修改，那么该对象或数组在其他方法中都将受到影响，这有时候会很棒，但有时候也会很糟糕，让我们来思考一个糟糕的场景：
+用户点击`购买`按钮，然后调用网络请求`购买`功能的接口，并将购物车的内容以数组的形式发送给后台，由于网络连接不畅，用户可能会继续重试请求。那如果在此期间用户在网络请求之前不小心点击了他们实际上不想购买的物品上的`添加到购物车`按钮，该怎么办？如果发生了这种情况并网络请求开始，那么该物品也意外得被购买了，因为它具有多购物车的引用。
+一个很好的解决方案是`addItemToCart`始终克隆`cart`，编辑它，然后返回克隆。 这样可以确保任何保留在购物车参考上的其他功能都不会受到任何更改的影响。
+提到这种方法的两点需要注意：
+1.在某些情况下，您可能确实想要修改输入对象，但是当您采用这种编程习惯时，您会发现这些情况非常罕见。 大多数东西都可以重构，没有副作用！ （见[纯函数]（https://en.wikipedia.org/wiki/Pure_function））
+克隆大对象在性能方面可能非常昂贵。 幸运的是，这在实践中不是一个大问题，因为有很好的库快速实现而不是像手动克隆对象和数组那样占用大量内存。
 
-The user clicks the "Purchase", button which calls a `purchase` function that spawns a network request and sends the `cart` array to the server. Because of a bad network connection, the purchase function has to keep retrying the request. Now, what if in the meantime the user accidentally clicks "Add to Cart" button on an item they don't actually want before the network request begins? If that happens and the network request begins, then that purchase function will send the accidentally added item because it has a reference to a shopping cart array that the `addItemToCart` function modified by adding an unwanted item.  
-
-A great solution would be for the `addItemToCart` to always clone the `cart`, edit it, and return the clone. This ensures that no other functions that are holding onto a reference of the shopping cart will be affected by any changes.  
-
-Two caveats to mention to this approach:
-
-1. There might be cases where you actually want to modify the input object, but when you adopt this programming practice you will find that those cases are pretty rare. Most things can be refactored to have no side effects! (see [pure function](https://en.wikipedia.org/wiki/Pure_function))
-
-2. Cloning big objects can be very expensive in terms of performance. Luckily, this isn't a big issue in practice because there are great libraries that allow this kind of programming approach to be fast and not as memory intensive as it would be for you to manually clone objects and arrays.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 function addItemToCart(cart: CartItem[], item: Item): void {
@@ -630,7 +625,7 @@ function addItemToCart(cart: CartItem[], item: Item): void {
 };
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function addItemToCart(cart: CartItem[], item: Item): CartItem[] {
@@ -638,13 +633,12 @@ function addItemToCart(cart: CartItem[], item: Item): CartItem[] {
 };
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Don't write to global functions
+### 不要书写全局方法
+污点全局变量在JavaScript中是一种不好的做法，因为你可能会与另一个库发生冲突。 让我们考虑一个例子：如果你想扩展JavaScript的原生Array方法以获得一个可以显示两个数组之间差异的`diff`方法，该怎么办？ 您可以将新函数写入`Array.prototype`，但它可能会与另一个尝试执行相同操作的库发生冲突。 如果那个其他库只是使用`diff`找到数组的第一个和最后一个元素之间的区别怎么办？ 这就是为什么只使用类并简单地扩展`Array`全局变得更好的原因。
 
-Polluting globals is a bad practice in JavaScript because you could clash with another library and the user of your API would be none-the-wiser until they get an exception in production. Let's think about an example: what if you wanted to extend JavaScript's native Array method to have a `diff` method that could show the difference between two arrays? You could write your new function to the `Array.prototype`, but it could clash with another library that tried to do the same thing. What if that other library was just using `diff` to find the difference between the first and last elements of an array? This is why it would be much better to just use classes and simply extend the `Array` global.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 declare global {
@@ -661,7 +655,7 @@ if (!Array.prototype.diff) {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class MyArray<T> extends Array<T> {
@@ -672,13 +666,11 @@ class MyArray<T> extends Array<T> {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Favor functional programming over imperative programming
+### 使用函数式编程而不是命令式编程
 
-Favor this style of programming when you can.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 const contributions = [
@@ -704,7 +696,7 @@ for (let i = 0; i < contributions.length; i++) {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 const contributions = [
@@ -727,11 +719,11 @@ const totalOutput = contributions
   .reduce((totalLines, output) => totalLines + output.linesOfCode, 0);
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Encapsulate conditionals
+### 封装条件
 
-**Bad:**
+**不推荐:**
 
 ```ts
 if (subscription.isTrial || account.balance > 0) {
@@ -739,7 +731,7 @@ if (subscription.isTrial || account.balance > 0) {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function canActivateService(subscription: Subscription, account: Account) {
@@ -751,11 +743,11 @@ if (canActivateService(subscription, account)) {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Avoid negative conditionals
+### 避免负向判断
 
-**Bad:**
+**不推荐:**
 
 ```ts
 function isEmailNotUsed(email: string): boolean {
@@ -767,7 +759,7 @@ if (isEmailNotUsed(email)) {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function isEmailUsed(email): boolean {
@@ -779,13 +771,13 @@ if (!isEmailUsed(node)) {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Avoid conditionals
+### 减少判断
 
-This seems like an impossible task. Upon first hearing this, most people say, "how am I supposed to do anything without an `if` statement?" The answer is that you can use polymorphism to achieve the same task in many cases. The second question is usually, "well that's great but why would I want to do that?" The answer is a previous clean code concept we learned: a function should only do one thing. When you have classes and functions that have `if` statements, you are telling your user that your function does more than one thing. Remember, just do one thing.
+这似乎是一项不可能的任务。 在第一次听到这个观点时，大多数人都会说，“如果没有`if`陈述，我该怎么做？” 答案是，在许多情况下，都可以使用多态来实现相同的任务。 第二个问题通常是，“那很好，但我为什么要那样做呢？” 答案是我们之前学到的一个简洁的代码概念：一个函数应该只做一件事。 当你有具有`if`语句的类和函数时，你告诉你的用户你的函数不止一件事。 记住，只做一件事。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 class Airplane {
@@ -811,7 +803,7 @@ class Airplane {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 abstract class Airplane {
@@ -844,53 +836,23 @@ class Cessna extends Airplane {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Avoid type checking
+### 不要过度优化
 
-TypeScript is a strict syntactical superset of JavaScript and adds optional static type checking to the language.
-Always prefer to specify types of variables, parameters and return values to leverage the full power of TypeScript features.
-It makes refactoring more easier.
+现代浏览器在运行时进行了大量的优化。 很多时候，如果你正在优化那么你只是在浪费你的时间。 你可以在[这里]（https://github.com/petkaantonov/bluebird/wiki/Optimization-killers）看到缺少优化的地方。 同时针对那些，直到它们被修复为止。
 
-**Bad:**
+**不推荐:**
 
 ```ts
-function travelToTexas(vehicle: Bicycle | Car) {
-  if (vehicle instanceof Bicycle) {
-    vehicle.pedal(currentLocation, new Location('texas'));
-  } else if (vehicle instanceof Car) {
-    vehicle.drive(currentLocation, new Location('texas'));
-  }
-}
-```
-
-**Good:**
-
-```ts
-type Vehicle = Bicycle | Car;
-
-function travelToTexas(vehicle: Vehicle) {
-  vehicle.move(currentLocation, new Location('texas'));
-}
-```
-
-**[⬆ back to top](#table-of-contents)**
-
-### Don't over-optimize
-
-Modern browsers do a lot of optimization under-the-hood at runtime. A lot of times, if you are optimizing then you are just wasting your time. There are good [resources](https://github.com/petkaantonov/bluebird/wiki/Optimization-killers) for seeing where optimization is lacking. Target those in the meantime, until they are fixed if they can be.
-
-**Bad:**
-
-```ts
-// On old browsers, each iteration with uncached `list.length` would be costly
-// because of `list.length` recomputation. In modern browsers, this is optimized.
+// 在旧浏览器上，每次使用未缓存的`list.length`迭代都会很昂贵
+// 因为`list.length`会重新计算。 但是在现代浏览器中，这已经被优化了。
 for (let i = 0, len = list.length; i < len; i++) {
   // ...
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 for (let i = 0; i < list.length; i++) {
@@ -898,14 +860,14 @@ for (let i = 0; i < list.length; i++) {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Remove dead code
+### 移除无用的代码
 
-Dead code is just as bad as duplicate code. There's no reason to keep it in your codebase.
-If it's not being called, get rid of it! It will still be safe in your version history if you still need it.
+无用的代码和重复代码一样糟糕。 没有理由将它保留在您的代码库中。
+如果它没有被调用，请删掉它！ 如果后面需要，可以在版本管理的历史中找到它。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 function oldRequestModule(url: string) {
@@ -920,7 +882,7 @@ const req = requestModule;
 inventoryTracker('apples', req, 'www.inventory-awesome.io');
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 function requestModule(url: string) {
@@ -931,20 +893,11 @@ const req = requestModule;
 inventoryTracker('apples', req, 'www.inventory-awesome.io');
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Use iterators and generators
+### 使用迭代器和生成器
 
-Use generators and iterables when working with collections of data used like a stream.  
-There are some good reasons:
-
-- decouples the callee from the generator implementation in a sense that callee decides how many
-items to access
-- lazy execution, items are streamed on demand
-- built-in support for iterating items using the `for-of` syntax
-- iterables allow to implement optimized iterator patterns
-
-**Bad:**
+**不推荐:**
 
 ```ts
 function fibonacci(n: number): number[] {
@@ -963,15 +916,12 @@ function print(n: number) {
   fibonacci(n).forEach(fib => console.log(fib));
 }
 
-// Print first 10 Fibonacci numbers.
 print(10);
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
-// Generates an infinite stream of Fibonacci numbers.
-// The generator doesn't keep the array of all numbers.
 function* fibonacci(): IterableIterator<number> {
   let [a, b] = [0, 1];
 
@@ -989,13 +939,9 @@ function print(n: number) {
   }  
 }
 
-// Print first 10 Fibonacci numbers.
 print(10);
 ```
-
-There are libraries that allow working with iterables in a similar way as with native arrays, by
-chaining methods like `map`, `slice`, `forEach` etc. See [itiriri](https://www.npmjs.com/package/itiriri) for
-an example of advanced manipulation with iterables (or [itiriri-async](https://www.npmjs.com/package/itiriri-async) for manipulation of async iterables).
+有些库允许我们用之前熟悉的方法来处理例如 `map`, `slice`, `forEach` 等等. 参考这里 [itiriri](https://www.npmjs.com/package/itiriri) (或者 [itiriri-async](https://www.npmjs.com/package/itiriri-async) 用于异步处理).
 
 ```ts
 import itiriri from 'itiriri';
@@ -1014,23 +960,23 @@ itiriri(fibonacci())
   .forEach(fib => console.log(fib));
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Objects and Data Structures
+## 对象和数据结构
 
-### Use getters and setters
+### 使用 getters 和 setters
 
-TypeScript supports getter/setter syntax.
-Using getters and setters to access data from objects that encapsulate behavior could be better than simply looking for a property on an object.
-"Why?" you might ask. Well, here's a list of reasons:
+TypeScript支持getter/setter语法。
+使用getter和setter访问来自封装行为的对象的数据可能比简单地查找对象上的属性更好。
+你可能会问为什么，下面是一些原因：
 
-- When you want to do more beyond getting an object property, you don't have to look up and change every accessor in your codebase.
-- Makes adding validation simple when doing a `set`.
-- Encapsulates the internal representation.
-- Easy to add logging and error handling when getting and setting.
-- You can lazy load your object's properties, let's say getting it from a server.
+ - 当您想要获取对象属性之外的其他操作时，您不必查找并更改代码库中的每个访问者。
+ - 在执行`set`时使添加验证变得简单。
+ - 封装内部表示。
+ - 获取和设置时，可以轻松添加日志记录和错误处理。
+ - 您可以延迟加载对象的属性，假设从服务器获取它。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 type BankAccount = {
@@ -1051,7 +997,7 @@ if (value < 0) {
 account.balance = value;
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class BankAccount {
@@ -1072,21 +1018,21 @@ class BankAccount {
   // ...
 }
 
-// Now `BankAccount` encapsulates the validation logic.
-// If one day the specifications change, and we need extra validation rule,
-// we would have to alter only the `setter` implementation,
-// leaving all dependent code unchanged.
+// 现在 `BankAccount` 封装了验证逻辑
+// 如果有一个我们想增加额外的验证规则,
+// 我们只需要去改变 `setter` 的实现,
+// 而不影响其他代码.
 const account = new BankAccount();
 account.balance = 100;
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Make objects have private/protected members
+### 设置 private/protected
 
-TypeScript supports `public` *(default)*, `protected` and `private` accessors on class members.  
+TypeScript 支持 `public` *(默认)*, `protected` 还有 `private`.  
 
-**Bad:**
+**不推荐:**
 
 ```ts
 class Circle {
@@ -1106,7 +1052,7 @@ class Circle {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class Circle {
@@ -1123,14 +1069,12 @@ class Circle {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Prefer immutability
+### 更倾向于不可变
+TypeScript 的类型系统允许在接口/类的各个属性上标记`readonly`，对于更高级的场景，有一个内置里类型`Readonly`，它接受一个泛型`<T>`并使用映射类型将其所有属性标记为只读，请见[这里](https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types)。
 
-TypeScript's type system allows you to mark individual properties on an interface / class as *readonly*. This allows you to work in a functional way (unexpected mutation is bad).  
-For more advanced scenarios there is a built-in type `Readonly` that takes a type `T` and marks all of its properties as readonly using mapped types (see [mapped types](https://www.typescriptlang.org/docs/handbook/advanced-types.html#mapped-types)).
-
-**Bad:**
+**不推荐:**
 
 ```ts
 interface Config {
@@ -1140,7 +1084,7 @@ interface Config {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 interface Config {
@@ -1150,14 +1094,14 @@ interface Config {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### type vs. interface
+### `type` 对比 `interface`
 
-Use type when you might need a union or intersection. Use interface when you want `extends` or `implements`. There is no strict rule however, use the one that works for you.  
-For a more detailed explanation refer to this [answer](https://stackoverflow.com/questions/37233735/typescript-interfaces-vs-types/54101543#54101543) about the differences between `type` and `interface` in TypeScript.
+当您使用联合或者交叉时使用`type`，当想要继承或者实现时使用`interface`，但是没有严格的规则，请使用适合自己的规则。
+有关更详细的说明，请参阅[这里](https://stackoverflow.com/questions/37233735/typescript-interfaces-vs-types/54101543#54101543)了解ts中`type`和`interface`之间的区别。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 interface EmailConfig {
@@ -1179,7 +1123,7 @@ type Shape = {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 
@@ -1208,15 +1152,14 @@ class Square implements Shape {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## Classes
+## 类
 
-### Classes should be small
+### 类应该是精简的
+类的规模是由其责任来衡量的。 遵循*单一责任原则*一个类应该很小。
 
-The class' size is measured by its responsibility. Following the *Single Responsibility principle* a class should be small.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 class Dashboard {
@@ -1239,7 +1182,7 @@ class Dashboard {
 
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class Dashboard {
@@ -1248,29 +1191,23 @@ class Dashboard {
   getVersion(): string { /* ... */ }
 }
 
-// split the responsibilities by moving the remaining methods to other classes
+// 通过将其他方法移动到其他类中来分担责任。
 // ...
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### High cohesion and low coupling
+### 高内聚和低耦合
+聚合程度决定了类成员的彼此相关程度。在理想情况下，每个方法都应该使用类中的所有字段，然后我们称之为*最大内聚类*，但这是不容易实现的，甚至是不可取的，但是我们都更喜欢凝聚力。
+耦合是指两个类相互依赖的程度，如果其中一个类的修改不会影响另一个类，则称这两个类是低耦合的。
+良好的软件设计应该是**高内聚**和**低耦合**。
 
-Cohesion defines the degree to which class members are related to each other. Ideally, all fields within a class should be used by each method.
-We then say that the class is *maximally cohesive*. In practice, this however is not always possible, nor even advisable. You should however prefer cohesion to be high.  
-
-Coupling refers to how related or dependent are two classes toward each other. Classes are said to be low coupled if changes in one of them doesn't affect the other one.  
-  
-Good software design has **high cohesion** and **low coupling**.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 class UserManager {
-  // Bad: each private variable is used by one or another group of methods.
-  // It makes clear evidence that the class is holding more than a single responsibility.
-  // If I need only to create the service to get the transactions for a user,
-  // I'm still forced to pass and instance of `emailSender`.
+  // 不推荐理由: 每一个私有变量都有特定的一组方法使用.
+  // 这明确的表名这个类不止做了一件事情.
   constructor(
     private readonly db: Database,
     private readonly emailSender: EmailSender) {
@@ -1298,7 +1235,7 @@ class UserManager {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class UserService {
@@ -1332,21 +1269,18 @@ class UserNotifier {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Prefer composition over inheritance
+### 比起继承来更喜欢使用组合
+正如[设计模式](https://en.wikipedia.org/wiki/Design_Patterns)中所说的那样，你应该**尽可能得优先组合而不是继承**，有很多很好的理由去使用继承，同时也有很多很好的理由去使用组合，这就意味着如果你的思想本能的是使用继承，那就试着想一想，使用组合是不是能更好的解决你的问题，一般在某些情况下它是可以的。
+你可能想知道我什么时候该使用组合，这取决于你手头的问题，不过下面的列表列出了使用继承更好的一些情况：
+1. 你的继承表示的是"is-a"关系而不是"has-a"关系（Human-> Animal vs. User-> UserDetails）。
 
-As stated famously in [Design Patterns](https://en.wikipedia.org/wiki/Design_Patterns) by the Gang of Four, you should *prefer composition over inheritance* where you can. There are lots of good reasons to use inheritance and lots of good reasons to use composition. The main point for this maxim is that if your mind instinctively goes for inheritance, try to think if composition could model your problem better. In some cases it can.  
-  
-You might be wondering then, "when should I use inheritance?" It depends on your problem at hand, but this is a decent list of when inheritance makes more sense than composition:
+2. 您可以重用基类中的代码（人类可以像所有动物一样移动）。
 
-1. Your inheritance represents an "is-a" relationship and not a "has-a" relationship (Human->Animal vs. User->UserDetails).
+3. 您希望通过更改基类对派生类进行全局更改。 （改变所有动物移动时的热量消耗）。
 
-2. You can reuse code from the base classes (Humans can move like all animals).
-
-3. You want to make global changes to derived classes by changing a base class. (Change the caloric expenditure of all animals when they move).
-
-**Bad:**
+**不推荐:**
 
 ```ts
 class Employee {
@@ -1358,7 +1292,6 @@ class Employee {
   // ...
 }
 
-// Bad because Employees "have" tax data. EmployeeTaxData is not a type of Employee
 class EmployeeTaxData extends Employee {
   constructor(
     name: string,
@@ -1372,7 +1305,7 @@ class EmployeeTaxData extends Employee {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class Employee {
@@ -1401,13 +1334,13 @@ class EmployeeTaxData {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Use method chaining
+### 使用链式编程
 
-This pattern is very useful and commonly used in many libraries. It allows your code to be expressive, and less verbose. For that reason, use method chaining and take a look at how clean your code will be.
+这种模式非常有用，并且常用于许多库中。 它允许您的代码更直观，而不是冗长。 因此，请使用链式编程并检查代码的清洁程度。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 class QueryBuilder {
@@ -1444,7 +1377,7 @@ queryBuilder.orderBy('firstName', 'lastName');
 const query = queryBuilder.build();
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class QueryBuilder {
@@ -1483,15 +1416,14 @@ const query = new QueryBuilder()
   .build();
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-## SOLID
+## SOLID原则
 
-### Single Responsibility Principle (SRP)
+### 单一责任原则 (SRP)
+正如代码整洁之道上所说，“应该有且仅有一个原因引起类的变更”，要最大幅度的减少类的变更，如果一个类的功能太负责而你修改的它的一部分，那么很难保证是否会影响到其他地方。
 
-As stated in Clean Code, "There should never be more than one reason for a class to change". It's tempting to jam-pack a class with a lot of functionality, like when you can only take one suitcase on your flight. The issue with this is that your class won't be conceptually cohesive and it will give it many reasons to change. Minimizing the amount of times you need to change a class is important. It's important because if too much functionality is in one class and you modify a piece of it, it can be difficult to understand how that will affect other dependent modules in your codebase.
-
-**Bad:**
+**不推荐:**
 
 ```ts
 class UserSettings {
@@ -1510,7 +1442,7 @@ class UserSettings {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 class UserAuth {
@@ -1538,13 +1470,13 @@ class UserSettings {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Open/Closed Principle (OCP)
+### 开放封闭原则 (OCP)
 
-As stated by Bertrand Meyer, "software entities (classes, modules, functions, etc.) should be open for extension, but closed for modification." What does that mean though? This principle basically states that you should allow users to add new functionalities without changing existing code.
+一个软件实体如类、模块和函数应该对扩展开放，对修改关闭。但并不意味着不做任何修改，低层模块的变更，必然要有高层模块进行耦合，否则就是一个孤立无意义的代码片段。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 class AjaxAdapter extends Adapter {
@@ -1570,30 +1502,29 @@ class HttpRequester {
   async fetch<T>(url: string): Promise<T> {
     if (this.adapter instanceof AjaxAdapter) {
       const response = await makeAjaxCall<T>(url);
-      // transform response and return
+      // 转换response并返回
     } else if (this.adapter instanceof NodeAdapter) {
       const response = await makeHttpCall<T>(url);
-      // transform response and return
+      // 转换response并返回
     }
   }
 }
 
 function makeAjaxCall<T>(url: string): Promise<T> {
-  // request and return promise
+  // 转换response并返回
 }
 
 function makeHttpCall<T>(url: string): Promise<T> {
-  // request and return promise
+  // 转换response并返回
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 abstract class Adapter {
   abstract async request<T>(url: string): Promise<T>;
 
-  // code shared to subclasses ...
 }
 
 class AjaxAdapter extends Adapter {
@@ -1602,7 +1533,7 @@ class AjaxAdapter extends Adapter {
   }
 
   async request<T>(url: string): Promise<T>{
-    // request and return promise
+    // 转换response并返回
   }
 
   // ...
@@ -1614,7 +1545,7 @@ class NodeAdapter extends Adapter {
   }
 
   async request<T>(url: string): Promise<T>{
-    // request and return promise
+    // 转换response并返回
   }
 
   // ...
@@ -1626,20 +1557,18 @@ class HttpRequester {
 
   async fetch<T>(url: string): Promise<T> {
     const response = await this.adapter.request<T>(url);
-    // transform response and return
+    // 转换response并返回
   }
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Liskov Substitution Principle (LSP)
+### 里氏替换原则 (LSP)
 
-This is a scary term for a very simple concept. It's formally defined as "If S is a subtype of T, then objects of type T may be replaced with objects of type S (i.e., objects of type S may substitute objects of type T) without altering any of the desirable properties of that program (correctness, task performed, etc.)." That's an even scarier definition.  
-  
-The best explanation for this is if you have a parent class and a child class, then the parent class and child class can be used interchangeably without getting incorrect results. This might still be confusing, so let's take a look at the classic Square-Rectangle example. Mathematically, a square is a rectangle, but if you model it using the "is-a" relationship via inheritance, you quickly get into trouble.
+只要父类能出现的地方子类都可以出现，而且替换为子类也不会产生任何错误或异常，使用者可有根本就不需要知道是父类还是子类。但是，反过来就不行了，有子类出现的地方，父类未必能适应。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 class Rectangle {
@@ -1691,7 +1620,7 @@ function renderLargeRectangles(rectangles: Rectangle[]) {
     const area = rectangle
       .setWidth(4)
       .setHeight(5)
-      .getArea(); // BAD: Returns 25 for Square. Should be 20.
+      .getArea();
     rectangle.render(area);
   });
 }
@@ -1700,7 +1629,7 @@ const rectangles = [new Rectangle(), new Rectangle(), new Square()];
 renderLargeRectangles(rectangles);
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 abstract class Shape {
@@ -1748,14 +1677,13 @@ const shapes = [new Rectangle(4, 5), new Rectangle(4, 5), new Square(5)];
 renderLargeShapes(shapes);
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Interface Segregation Principle (ISP)
+### 接口隔离原则 (ISP)
 
-ISP states that "Clients should not be forced to depend upon interfaces that they do not use.". This principle is very much related to the Single Responsibility Principle.
-What it really means is that you should always design your abstractions in a way that the clients that are using the exposed methods do not get the whole pie instead. That also include imposing the clients with the burden of implementing methods that they don’t actually need.
+建立单一接口，不要建立臃肿庞大的接口。接口隔离原则与单一职责的审视角度是不相同的，单一职责要求的是类和接口职责单一，注重的是职责，这是业务逻辑上的划分，而接口隔离原则要求接口的方法尽量少。
 
-**Bad:**
+**不推荐:**
 
 ```ts
 interface SmartPrinter {
@@ -1793,7 +1721,7 @@ class EconomicPrinter implements SmartPrinter {
 }
 ```
 
-**Good:**
+**推荐:**
 
 ```ts
 interface Printer {
@@ -1829,21 +1757,18 @@ class EconomicPrinter implements Printer {
 }
 ```
 
-**[⬆ back to top](#table-of-contents)**
+**[⬆ 回到顶部](#目录)**
 
-### Dependency Inversion Principle (DIP)
+### 依赖倒置原则 (DIP)
 
-This principle states two essential things:
-
-1. High-level modules should not depend on low-level modules. Both should depend on abstractions.
-
-2. Abstractions should not depend upon details. Details should depend on abstractions.
-
-This can be hard to understand at first, but if you've worked with Angular, you've seen an implementation of this principle in the form of Dependency Injection (DI). While they are not identical concepts, DIP keeps high-level modules from knowing the details of its low-level modules and setting them up. It can accomplish this through DI. A huge benefit of this is that it reduces the coupling between modules. Coupling is a very bad development pattern because it makes your code hard to refactor.  
+含义：
+1.高层模块不应该依赖低层模块，两者都应该依赖其抽象。
+2.抽象不应该依赖细节。
+3.细节应该依赖抽象。
   
-DIP is usually achieved by a using an inversion of control (IoC) container. An example of a powerful IoC container for TypeScript is [InversifyJs](https://www.npmjs.com/package/inversify)
+DIP 通常通过使用控制反转 (IoC) 来实现. 这里有一个例子 [InversifyJs](https://www.npmjs.com/package/inversify)
 
-**Bad:**
+**不推荐:**
 
 ```ts
 import { readFile as readFileCb } from 'fs';
@@ -1857,14 +1782,14 @@ type ReportData = {
 
 class XmlFormatter {
   parse<T>(content: string): T {
-    // Converts an XML string to an object T
+    // 将XML字符串序列化为对象.
   }
 }
 
 class ReportReader {
 
-  // BAD: We have created a dependency on a specific request implementation.
-  // We should just have ReportReader depend on a parse method: `parse`
+  // 不推荐: 我们已经创建了对特定请求实现的依赖。
+  // 我们应该让ReportReader依赖于一个解析方法：`parse`
   private readonly formatter = new XmlFormatter();
 
   async read(path: string): Promise<ReportData> {
@@ -1896,14 +1821,14 @@ interface Formatter {
 
 class XmlFormatter implements Formatter {
   parse<T>(content: string): T {
-    // Converts an XML string to an object T
+    // 将XML字符串序列化为对象.
   }
 }
 
 
 class JsonFormatter implements Formatter {
   parse<T>(content: string): T {
-    // Converts a JSON string to an object T
+    // 将JSON字符串序列化为对象.
   }
 }
 
@@ -1921,7 +1846,7 @@ class ReportReader {
 const reader = new ReportReader(new XmlFormatter());
 await report = await reader.read('report.xml');
 
-// or if we had to read a json report
+// 如果我们需要解析json
 const reader = new ReportReader(new JsonFormatter());
 await report = await reader.read('report.json');
 ```
